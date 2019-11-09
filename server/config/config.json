@@ -1,0 +1,26 @@
+{
+	"development": {
+		"username": "root",
+		"password": null,
+		"database": "custom_auth_tutorial",
+		"host": "localhost",
+		"dialect": "mysql",
+		"operatorsAliases": false
+	},
+	"test": {
+		"username": "root",
+		"password": null,
+		"database": "custom_auth_tutorial",
+		"host": "localhost",
+		"dialect": "mysql",
+		"operatorsAliases": false
+	},
+	"production": {
+		"username": "root",
+		"password": null,
+		"database": "custom_auth_tutorial",
+		"host": "localhost",
+		"dialect": "mysql",
+		"operatorsAliases": false
+	}
+}
