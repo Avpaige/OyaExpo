@@ -1,24 +1,21 @@
 const express = require('express');
 const http = require('http')
 const socketio = require('socket.io');
-const mongojs = require('mongojs');
+const mongo = require('mongodb').MongoClient;
+// var mongojs = require('mongojs');
 
-const ObjectID = mongojs.ObjectID;
-// var db = mongojs(process.env.MONGO_URI || 'mongodb://localhost:27017/local');
-
-var databaseUrl = "oya";
-var userCollection = ["User"];
-
-const userDB = mongojs(databaseUrl, userCollection);
-userDB.on("error", function(error) {
-    console.log("Database Error:", error);
-  });
+// var ObjectID = mongojs.ObjectID;
+// var db = mongojs(process.env.MONGO_URL || 'mongodb://localhost:27017/local');
 
 var app = express();
 var server = http.Server(app);
 var websocket = socketio(server);
 server.listen(3000, () => console.log('listening on *:3000'));
 
+mongo.connect('mongodb://127.0.0.1/chat', function(err, db){
+    if(err){
+        throw err;
+    }
 // Mapping objects to easily map sockets and users.
 var clients = {};
 var users = {};
@@ -31,7 +28,6 @@ websocket.on('connection', (socket) => {
     clients[socket.id] = socket;
     socket.on('userJoined', (userId) => onUserJoined(userId, socket));
     socket.on('message', (message) => onMessageReceived(message, socket));
-    console.log("someone connected :)")
 });
 
 // Event listeners.
@@ -40,7 +36,7 @@ function onUserJoined(userId, socket) {
   try {
     // The userId is null for new users.
     if (!userId) {
-      var user = userDB.insert({}, (err, user) => {
+      var user = db.collection('users').insert({}, (err, user) => {
         socket.emit('userJoined', user._id);
         users[socket.id] = user._id;
         _sendExistingMessages(socket);
@@ -61,7 +57,6 @@ function onMessageReceived(message, senderSocket) {
   if (!userId) return;
 
   _sendAndSaveMessage(message, senderSocket);
-
 }
 
 // Helper functions.
@@ -83,6 +78,7 @@ function _sendAndSaveMessage(message, socket, fromServer) {
     text: message.text,
     user: message.user,
     createdAt: new Date(message.createdAt),
+    socket:socket,
     chatId: chatId
   };
 
@@ -101,4 +97,5 @@ stdin.addListener('data', function(d) {
     createdAt: new Date(),
     user: { _id: 'robot' }
   }, null /* no socket */, true /* send from server */);
+});
 });
