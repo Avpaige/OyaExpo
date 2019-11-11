@@ -10,7 +10,8 @@ class Main extends React.Component {
     super(props);
     this.state = {
       messages: [],
-      userId: null
+      userId: null,
+      usersInChat: []
     };
 
     this.determineUser = this.determineUser.bind(this);
