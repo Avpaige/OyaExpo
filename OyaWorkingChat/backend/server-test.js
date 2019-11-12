@@ -1,23 +1,25 @@
-const express = require('express');
-const http = require('http')
-const socketio = require('socket.io');
-const mongojs = require('mongojs');
+var express = require('express');
+var http = require('http')
+var socketio = require('socket.io');
+var mongojs = require('mongojs');
 
-const ObjectID = mongojs.ObjectID;
-// var db = mongojs(process.env.MONGO_URI || 'mongodb://localhost:27017/local');
-
-var databaseUrl = "oya";
-var userCollection = ["User"];
-
-const userDB = mongojs(databaseUrl, userCollection);
-userDB.on("error", function(error) {
-    console.log("Database Error:", error);
-  });
-
+var ObjectID = mongojs.ObjectID;
+var db = mongojs(process.env.MONGO_URL || 'mongodb://localhost:27017/chats');
 var app = express();
 var server = http.Server(app);
 var websocket = socketio(server);
-server.listen(3000, () => console.log('listening on *:3000'));
+
+app.get('/', function (req, res) {
+    res.sendFile(__dirname + '/index.html');
+});
+
+server.listen(3333, (err) => {
+    if (err) {
+        console.log(`Error starting server: ${err}`)
+        process.exit(1)
+    }
+    console.log('listening on *:3000')
+});
 
 // Mapping objects to easily map sockets and users.
 var clients = {};
@@ -28,11 +30,19 @@ var users = {};
 var chatId = 1;
 
 websocket.on('connection', (socket) => {
+    console.log("here")
     clients[socket.id] = socket;
     socket.on('userJoined', (userId) => onUserJoined(userId, socket));
     socket.on('message', (message) => onMessageReceived(message, socket));
-    console.log("someone connected :)")
+
+    socket.emit('news', { coding: "is fun"});
+    socket.on("my other event", (data) => {
+        console.log("Received event data");
+        console.log(data);
+    })
+        
 });
+
 
 // Event listeners.
 // When a user joins the chatroom.
@@ -40,7 +50,7 @@ function onUserJoined(userId, socket) {
   try {
     // The userId is null for new users.
     if (!userId) {
-      var user = userDB.insert({}, (err, user) => {
+      var user = db.collection('users').insert({}, (err, user) => {
         socket.emit('userJoined', user._id);
         users[socket.id] = user._id;
         _sendExistingMessages(socket);
@@ -61,7 +71,6 @@ function onMessageReceived(message, senderSocket) {
   if (!userId) return;
 
   _sendAndSaveMessage(message, senderSocket);
-
 }
 
 // Helper functions.
